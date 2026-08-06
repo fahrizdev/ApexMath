@@ -1,5 +1,9 @@
 # Scalar
 
+[![CI](https://github.com/fahrizzdev/ApexMath/actions/workflows/ci.yml/badge.svg)](https://github.com/fahrizzdev/ApexMath/actions/workflows/ci.yml)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)
+![Status](https://img.shields.io/badge/status-active%20prototype-2563eb)
+
 Adaptive math learning from arithmetic through Calculus II.
 
 Scalar starts with a diagnostic, adjusts question difficulty as a learner progresses, and turns performance into a focused study loop: lessons, weak-topic tracking, daily practice, notes, and study history.
@@ -44,26 +48,21 @@ The question bank is organized into seven difficulty bands and tagged by topic. 
 
 ## Run locally
 
-Requirements: Node.js and PostgreSQL.
+Requirements: Node.js 20+ and PostgreSQL.
 
 ```bash
 npm install
-```
-
-Set the environment variables:
-
-```bash
-export DATABASE_URL="postgresql://..."
-export JWT_SECRET="replace-with-a-secret"
-```
-
-Then start the app:
-
-```bash
+cp .env.example .env
 npm start
 ```
 
 Open `http://localhost:3000`.
+
+Run the current validation suite with:
+
+```bash
+npm test
+```
 
 ## Repository map
 
@@ -72,9 +71,19 @@ index.html      main application + diagnostic/dashboard UI
 lessons.html    lesson library and practice experience
 questions.js    leveled, topic-tagged question bank
 server.js       Express API, auth, adaptation, and persistence
-package.json    runtime dependencies and start script
+package.json    runtime dependencies and scripts
 ```
+
+## Roadmap
+
+- Expand automated coverage beyond syntax validation
+- Harden authentication and input validation
+- Add reproducible database migrations and seed data
+- Publish a stable hosted demo
+- Improve accessibility and mobile behavior
 
 ## Status
 
 Active prototype. The core adaptive learning loop, persistence layer, and lesson system are implemented; lesson coverage and learning logic are continuing to evolve.
+
+Contributions and responsible security reports are welcome—see [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
