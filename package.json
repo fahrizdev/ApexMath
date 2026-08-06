@@ -1,7 +1,18 @@
 {
   "name": "apexmath",
   "version": "1.0.0",
+  "private": true,
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
-  "dependencies": { "cors": "^2.8.6", "express": "^5.2.1", "pg": "^8.11.0" }
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --check server.js && node --check questions.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "pg": "^8.11.0"
+  }
 }
