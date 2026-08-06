@@ -5,25 +5,31 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
+    name: Validate on Node ${{ matrix.node }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
 
     steps:
-      - name: Checkout
+      - name: Check out repository
         uses: actions/checkout@v4
-
-      - name: Use Node.js 22
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-
+          node-version: ${{ matrix.node }}
       - name: Install dependencies
         run: npm install --ignore-scripts
-
-      - name: Validate JavaScript
+      - name: Run validation
         run: npm test
