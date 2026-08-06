@@ -1,6 +1,6 @@
 # Scalar
 
-[![CI](https://github.com/fahrizzdev/ApexMath/actions/workflows/ci.yml/badge.svg)](https://github.com/fahrizzdev/ApexMath/actions/workflows/ci.yml)
+[![CI](https://github.com/fahrizdev/ApexMath/actions/workflows/ci.yml/badge.svg)](https://github.com/fahrizdev/ApexMath/actions/workflows/ci.yml)
 ![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)
 ![Status](https://img.shields.io/badge/status-active%20prototype-2563eb)
 
