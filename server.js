@@ -11,8 +11,14 @@ function hashPassword(password, salt) {
   const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
   return { hash, salt };
 }
+function safeEqualHex(left, right) {
+  if (typeof left !== 'string' || typeof right !== 'string') return false;
+  const leftBuffer = Buffer.from(left, 'hex');
+  const rightBuffer = Buffer.from(right, 'hex');
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
 function verifyPassword(password, salt, storedHash) {
-  return hashPassword(password, salt).hash === storedHash;
+  return safeEqualHex(hashPassword(password, salt).hash, storedHash);
 }
 function makeToken(userId) {
   const payload = Buffer.from(JSON.stringify({ userId, iat: Date.now() })).toString('base64');
@@ -26,7 +32,7 @@ function verifyToken(token) {
   if (!payload || !sig) return null;
   const expected = crypto.createHmac('sha256', process.env.JWT_SECRET || 'scalar-dev-secret')
     .update(payload).digest('hex');
-  if (expected !== sig) return null;
+  if (!safeEqualHex(expected, sig)) return null;
   try { return JSON.parse(Buffer.from(payload, 'base64').toString()); } catch { return null; }
 }
 function authMiddleware(req, res, next) {
