@@ -5,6 +5,8 @@ const { Pool } = require('pg');
 const { questions, LEVELS, LEVEL_NAMES, TOPIC_LESSON_MAP } = require('./questions');
 const crypto = require('crypto');
 
+const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
 // ── Auth helpers ─────────────────────────────────────────────────────────────
 function hashPassword(password, salt) {
   if (!salt) salt = crypto.randomBytes(16).toString('hex');
@@ -33,7 +35,11 @@ function verifyToken(token) {
   const expected = crypto.createHmac('sha256', process.env.JWT_SECRET || 'scalar-dev-secret')
     .update(payload).digest('hex');
   if (!safeEqualHex(expected, sig)) return null;
-  try { return JSON.parse(Buffer.from(payload, 'base64').toString()); } catch { return null; }
+  try {
+    const decoded = JSON.parse(Buffer.from(payload, 'base64').toString());
+    if (!Number.isFinite(decoded.iat) || Date.now() - decoded.iat > TOKEN_MAX_AGE_MS) return null;
+    return decoded;
+  } catch { return null; }
 }
 function authMiddleware(req, res, next) {
   const token = (req.headers.authorization || '').replace('Bearer ', '');
