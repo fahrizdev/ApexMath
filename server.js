@@ -482,6 +482,13 @@ app.get('/daily/questions', authMiddleware, async (req, res) => {
 
 app.post('/daily/complete', authMiddleware, async (req, res) => {
   const { score, topicResults } = req.body;
+  const normalizedScore = Number(score);
+  if (!Number.isInteger(normalizedScore) || normalizedScore < 0 || normalizedScore > 5) {
+    return res.status(400).json({ error: 'Score must be an integer between 0 and 5' });
+  }
+  if (topicResults !== undefined && !Array.isArray(topicResults)) {
+    return res.status(400).json({ error: 'Topic results must be an array' });
+  }
   // topicResults: [{ topic, correct: bool }]
   try {
     const result = await pool.query('SELECT streak, last_quiz_date FROM users WHERE id=$1', [req.userId]);
@@ -494,13 +501,13 @@ app.post('/daily/complete', authMiddleware, async (req, res) => {
     if (lastDate === yesterday) newStreak = (u.streak || 0) + 1;
     else if (lastDate === today) newStreak = u.streak || 1;
 
-    const passed = score >= 3;
+    const passed = normalizedScore >= 3;
     await pool.query('UPDATE users SET streak=$1, last_quiz_date=NOW() WHERE id=$2', [newStreak, req.userId]);
 
     // Record quiz result
     await pool.query(
       'INSERT INTO daily_quiz_results (user_id, quiz_date, score, total, passed, topic_results) VALUES ($1, CURRENT_DATE, $2, 5, $3, $4) ON CONFLICT DO NOTHING',
-      [req.userId, score, passed, JSON.stringify(topicResults || [])]
+      [req.userId, normalizedScore, passed, JSON.stringify(topicResults || [])]
     );
 
     // Update topic performance for each answered question
