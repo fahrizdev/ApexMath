@@ -6,6 +6,7 @@ const { questions, LEVELS, LEVEL_NAMES, TOPIC_LESSON_MAP } = require('./question
 const crypto = require('crypto');
 
 const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const STUDY_SESSION_MAX_MS = 24 * 60 * 60 * 1000;
 
 // ── Auth helpers ─────────────────────────────────────────────────────────────
 function hashPassword(password, salt) {
@@ -569,11 +570,15 @@ app.post('/notes/:level', authMiddleware, async (req, res) => {
 // ── Study timer (synced to DB) ────────────────────────────────────────────────
 app.post('/study-session', authMiddleware, async (req, res) => {
   const { durationMs } = req.body;
-  if (!durationMs || durationMs < 10000) return res.json({ ok: true }); // ignore < 10s
+  const normalizedDurationMs = Number(durationMs);
+  if (!Number.isFinite(normalizedDurationMs) || normalizedDurationMs < 0 || normalizedDurationMs > STUDY_SESSION_MAX_MS) {
+    return res.status(400).json({ error: 'Study duration must be between 0 and 24 hours' });
+  }
+  if (normalizedDurationMs < 10000) return res.json({ ok: true }); // ignore < 10s
   try {
     await pool.query(
       'INSERT INTO study_sessions (user_id, duration_ms) VALUES ($1, $2)',
-      [req.userId, Math.floor(durationMs)]
+      [req.userId, Math.floor(normalizedDurationMs)]
     );
     res.json({ ok: true });
   } catch { res.json({ ok: false }); }
