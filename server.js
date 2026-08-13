@@ -368,10 +368,13 @@ app.post('/auth/change-password', authMiddleware, async (req, res) => {
 
 app.post('/auth/update-level', authMiddleware, async (req, res) => {
   const { level } = req.body;
-  if (level === undefined || level < 0 || level > 6) return res.status(400).json({ error: 'Invalid level' });
+  const normalizedLevel = Number(level);
+  if (!Number.isInteger(normalizedLevel) || normalizedLevel < 0 || normalizedLevel > 6) {
+    return res.status(400).json({ error: 'Level must be an integer between 0 and 6' });
+  }
   try {
-    await pool.query('UPDATE users SET level=$1 WHERE id=$2', [level, req.userId]);
-    res.json({ success: true, level, levelName: LEVEL_NAMES[level] });
+    await pool.query('UPDATE users SET level=$1 WHERE id=$2', [normalizedLevel, req.userId]);
+    res.json({ success: true, level: normalizedLevel, levelName: LEVEL_NAMES[normalizedLevel] });
   } catch { res.status(500).json({ error: 'Server error' }); }
 });
 
