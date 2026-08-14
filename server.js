@@ -42,6 +42,12 @@ function verifyToken(token) {
     return decoded;
   } catch { return null; }
 }
+function optionalAuthMiddleware(req, res, next) {
+  const token = (req.headers.authorization || '').replace('Bearer ', '');
+  const decoded = verifyToken(token);
+  req.userId = decoded?.userId || null;
+  next();
+}
 function authMiddleware(req, res, next) {
   const token = (req.headers.authorization || '').replace('Bearer ', '');
   const decoded = verifyToken(token);
@@ -250,17 +256,17 @@ app.post('/question', async (req, res) => {
 });
 
 // ── Save diagnostic result → auto-update user level ─────────────────────────
-app.post('/result', async (req, res) => {
-  const { email, level, levelName, score, total, userId } = req.body;
+app.post('/result', optionalAuthMiddleware, async (req, res) => {
+  const { email, level, levelName, score, total } = req.body;
   try {
-    // Save result
+    // Save result; only a verified token may associate it with an account
     await pool.query(
       'INSERT INTO diagnostic_results (user_id, email, level, level_name, score, total) VALUES ($1,$2,$3,$4,$5,$6)',
-      [userId || null, email || null, level, levelName, score, total]
+      [req.userId, email || null, level, levelName, score, total]
     );
-    // Auto-update user's level if they're logged in
-    if (userId) {
-      await pool.query('UPDATE users SET level = $1 WHERE id = $2', [level, userId]);
+    // Auto-update only the account identified by the verified token
+    if (req.userId) {
+      await pool.query('UPDATE users SET level = $1 WHERE id = $2', [level, req.userId]);
     }
   } catch (err) { console.error('Result save error:', err.message); }
   res.json({ success: true });
