@@ -7,6 +7,11 @@ const crypto = require('crypto');
 
 const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const STUDY_SESSION_MAX_MS = 24 * 60 * 60 * 1000;
+const TOKEN_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'scalar-dev-secret');
+
+if (!TOKEN_SECRET) {
+  throw new Error('JWT_SECRET is required in production');
+}
 
 // ── Auth helpers ─────────────────────────────────────────────────────────────
 function hashPassword(password, salt) {
@@ -25,7 +30,7 @@ function verifyPassword(password, salt, storedHash) {
 }
 function makeToken(userId) {
   const payload = Buffer.from(JSON.stringify({ userId, iat: Date.now() })).toString('base64');
-  const sig = crypto.createHmac('sha256', process.env.JWT_SECRET || 'scalar-dev-secret')
+  const sig = crypto.createHmac('sha256', TOKEN_SECRET)
     .update(payload).digest('hex');
   return `${payload}.${sig}`;
 }
@@ -33,7 +38,7 @@ function verifyToken(token) {
   if (!token) return null;
   const [payload, sig] = token.split('.');
   if (!payload || !sig) return null;
-  const expected = crypto.createHmac('sha256', process.env.JWT_SECRET || 'scalar-dev-secret')
+  const expected = crypto.createHmac('sha256', TOKEN_SECRET)
     .update(payload).digest('hex');
   if (!safeEqualHex(expected, sig)) return null;
   try {
