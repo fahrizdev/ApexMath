@@ -262,16 +262,26 @@ app.post('/question', async (req, res) => {
 
 // ── Save diagnostic result → auto-update user level ─────────────────────────
 app.post('/result', optionalAuthMiddleware, async (req, res) => {
-  const { email, level, levelName, score, total } = req.body;
+  const { email, level, score, total } = req.body;
+  const normalizedLevel = Number(level);
+  const normalizedScore = Number(score);
+  const normalizedTotal = Number(total);
+  if (!Number.isInteger(normalizedLevel) || normalizedLevel < 0 || normalizedLevel > 6) {
+    return res.status(400).json({ error: 'Level must be an integer between 0 and 6' });
+  }
+  if (!Number.isInteger(normalizedTotal) || normalizedTotal <= 0 ||
+      !Number.isInteger(normalizedScore) || normalizedScore < 0 || normalizedScore > normalizedTotal) {
+    return res.status(400).json({ error: 'Score must be an integer between 0 and total' });
+  }
   try {
     // Save result; only a verified token may associate it with an account
     await pool.query(
       'INSERT INTO diagnostic_results (user_id, email, level, level_name, score, total) VALUES ($1,$2,$3,$4,$5,$6)',
-      [req.userId, email || null, level, levelName, score, total]
+      [req.userId, email || null, normalizedLevel, LEVEL_NAMES[normalizedLevel], normalizedScore, normalizedTotal]
     );
     // Auto-update only the account identified by the verified token
     if (req.userId) {
-      await pool.query('UPDATE users SET level = $1 WHERE id = $2', [level, req.userId]);
+      await pool.query('UPDATE users SET level = $1 WHERE id = $2', [normalizedLevel, req.userId]);
     }
   } catch (err) { console.error('Result save error:', err.message); }
   res.json({ success: true });
