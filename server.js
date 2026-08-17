@@ -194,8 +194,8 @@ app.get('/waitlist/count', async (req, res) => {
 });
 
 // ── Adaptive question (DB-backed session) ────────────────────────────────────
-app.post('/question', async (req, res) => {
-  const { sessionId, currentLevel, correct, wrong, userId } = req.body;
+app.post('/question', optionalAuthMiddleware, async (req, res) => {
+  const { sessionId, currentLevel, correct, wrong } = req.body;
 
   try {
     // Load or create session from DB
@@ -207,7 +207,7 @@ app.post('/question', async (req, res) => {
     if (existing.rows.length === 0) {
       await pool.query(
         'INSERT INTO question_sessions (session_id, user_id, current_level) VALUES ($1, $2, $3)',
-        [sessionId, userId || null, currentLevel || 1]
+        [sessionId, req.userId, currentLevel || 1]
       );
       session = { seen_keys: [], current_level: currentLevel || 1 };
     } else {
