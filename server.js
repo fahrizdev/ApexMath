@@ -207,9 +207,9 @@ app.post('/question', optionalAuthMiddleware, async (req, res) => {
     if (existing.rows.length === 0) {
       await pool.query(
         'INSERT INTO question_sessions (session_id, user_id, current_level) VALUES ($1, $2, $3)',
-        [sessionId, req.userId, currentLevel || 1]
+        [sessionId, req.userId, currentLevel ?? 1]
       );
-      session = { seen_keys: [], current_level: currentLevel || 1 };
+      session = { seen_keys: [], current_level: currentLevel ?? 1 };
     } else {
       session = existing.rows[0];
     }
@@ -253,7 +253,7 @@ app.post('/question', optionalAuthMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Question error:', err.message);
     // Fallback to in-memory if DB fails
-    const level = currentLevel || 1;
+    const level = currentLevel ?? 1;
     const pool_q = questions[level];
     const q = pool_q[Math.floor(Math.random() * pool_q.length)];
     res.json({ question: q, level, levelName: LEVEL_NAMES[level], done: false });
