@@ -291,6 +291,9 @@ app.post('/result', optionalAuthMiddleware, async (req, res) => {
 app.post('/track-answer', authMiddleware, async (req, res) => {
   const { topic, correct } = req.body;
   if (!topic) return res.json({ ok: true });
+  if (typeof correct !== 'boolean') {
+    return res.status(400).json({ error: 'Correct must be a boolean' });
+  }
   try {
     if (correct) {
       await pool.query(`
