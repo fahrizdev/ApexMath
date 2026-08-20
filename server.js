@@ -569,8 +569,10 @@ app.post('/daily/complete', authMiddleware, async (req, res) => {
 
 // ── Notes (synced to DB) ──────────────────────────────────────────────────────
 app.get('/notes/:level', authMiddleware, async (req, res) => {
-  const level = parseInt(req.params.level);
-  if (isNaN(level) || level < 0 || level > 6) return res.status(400).json({ error: 'Invalid level' });
+  const level = Number(req.params.level);
+  if (!Number.isInteger(level) || level < 0 || level > 6) {
+    return res.status(400).json({ error: 'Invalid level' });
+  }
   try {
     const result = await pool.query(
       'SELECT content, updated_at FROM user_notes WHERE user_id=$1 AND level=$2',
@@ -581,8 +583,10 @@ app.get('/notes/:level', authMiddleware, async (req, res) => {
 });
 
 app.post('/notes/:level', authMiddleware, async (req, res) => {
-  const level = parseInt(req.params.level);
-  if (isNaN(level) || level < 0 || level > 6) return res.status(400).json({ error: 'Invalid level' });
+  const level = Number(req.params.level);
+  if (!Number.isInteger(level) || level < 0 || level > 6) {
+    return res.status(400).json({ error: 'Invalid level' });
+  }
   const { content } = req.body;
   try {
     await pool.query(`
