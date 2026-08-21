@@ -196,6 +196,11 @@ app.get('/waitlist/count', async (req, res) => {
 // ── Adaptive question (DB-backed session) ────────────────────────────────────
 app.post('/question', optionalAuthMiddleware, async (req, res) => {
   const { sessionId, currentLevel, correct, wrong } = req.body;
+  const normalizedLevel = currentLevel == null ? undefined : Number(currentLevel);
+  if (normalizedLevel !== undefined &&
+      (!Number.isInteger(normalizedLevel) || normalizedLevel < 0 || normalizedLevel > 6)) {
+    return res.status(400).json({ error: 'Level must be an integer between 0 and 6' });
+  }
 
   try {
     // Load or create session from DB
@@ -207,9 +212,9 @@ app.post('/question', optionalAuthMiddleware, async (req, res) => {
     if (existing.rows.length === 0) {
       await pool.query(
         'INSERT INTO question_sessions (session_id, user_id, current_level) VALUES ($1, $2, $3)',
-        [sessionId, req.userId, currentLevel ?? 1]
+        [sessionId, req.userId, normalizedLevel ?? 1]
       );
-      session = { seen_keys: [], current_level: currentLevel ?? 1 };
+      session = { seen_keys: [], current_level: normalizedLevel ?? 1 };
     } else {
       session = existing.rows[0];
     }
@@ -217,7 +222,7 @@ app.post('/question', optionalAuthMiddleware, async (req, res) => {
     let level = session.current_level;
 
     // Override if explicit level sent
-    if (currentLevel !== undefined) level = currentLevel;
+    if (normalizedLevel !== undefined) level = normalizedLevel;
 
     // Adjust level based on performance
     if (correct > wrong + 1 && level < 6) level = Math.min(6, level + 1);
@@ -253,7 +258,7 @@ app.post('/question', optionalAuthMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Question error:', err.message);
     // Fallback to in-memory if DB fails
-    const level = currentLevel ?? 1;
+    const level = normalizedLevel ?? 1;
     const pool_q = questions[level];
     const q = pool_q[Math.floor(Math.random() * pool_q.length)];
     res.json({ question: q, level, levelName: LEVEL_NAMES[level], done: false });
