@@ -522,6 +522,13 @@ app.post('/daily/complete', authMiddleware, async (req, res) => {
   if (topicResults !== undefined && !Array.isArray(topicResults)) {
     return res.status(400).json({ error: 'Topic results must be an array' });
   }
+  if (Array.isArray(topicResults) &&
+      (topicResults.length > 5 || topicResults.some(result =>
+        !result || typeof result.topic !== 'string' || !result.topic.trim() ||
+        typeof result.correct !== 'boolean'
+      ))) {
+    return res.status(400).json({ error: 'Topic results must contain at most five valid answers' });
+  }
   // topicResults: [{ topic, correct: bool }]
   try {
     const result = await pool.query('SELECT streak, last_quiz_date FROM users WHERE id=$1', [req.userId]);
